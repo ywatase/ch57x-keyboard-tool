@@ -9,7 +9,7 @@ use std::io::{BufReader, Read, StdinLock};
 use crate::config::Config;
 use crate::consts::PRODUCT_IDS;
 use crate::keyboard::{
-    k884x, k8890, Keyboard, KnobAction, MediaCode, Modifier, MouseAction, MouseButton,
+    k884x, k8850, k8890, Keyboard, KnobAction, MediaCode, Modifier, MouseAction, MouseButton,
     WellKnownCode,
 };
 use crate::options::{Command, LedCommand};
@@ -176,7 +176,8 @@ fn open_keyboard(devel_options: &DevelOptions) -> Result<Box<dyn Keyboard>> {
     );
 
     let preferred_endpint = match id_product {
-        0x8840 | 0x8842 | 0x8850 => k884x::Keyboard884x::preferred_endpoint(),
+        0x8840 | 0x8842 => k884x::Keyboard884x::preferred_endpoint(),
+        0x8850 => k8850::Keyboard8850::preferred_endpoint(),
         0x8890 => k8890::Keyboard8890::preferred_endpoint(),
         _ => unreachable!("unsupported device"),
     };
@@ -196,8 +197,11 @@ fn open_keyboard(devel_options: &DevelOptions) -> Result<Box<dyn Keyboard>> {
         .context("claim interface")?;
 
     match id_product {
-        0x8840 | 0x8842 | 0x8850 => {
+        0x8840 | 0x8842 => {
             k884x::Keyboard884x::new(handle, endpt_addr).map(|v| Box::new(v) as Box<dyn Keyboard>)
+        }
+        0x8850 => {
+            k8850::Keyboard8850::new(handle, endpt_addr).map(|v| Box::new(v) as Box<dyn Keyboard>)
         }
         0x8890 => {
             k8890::Keyboard8890::new(handle, endpt_addr).map(|v| Box::new(v) as Box<dyn Keyboard>)
@@ -223,7 +227,9 @@ fn find_device(devel_options: &DevelOptions) -> Result<(Device<Context>, DeviceD
             desc.product_id()
         );
         let product_id = desc.product_id();
-        if desc.vendor_id() == devel_options.vendor_id
+        if (desc.vendor_id() == devel_options.vendor_id 
+            || desc.vendor_id() == consts::VENDOR_ID 
+            || desc.vendor_id() == consts::VENDOR_ID_ALT)
             && match devel_options.product_id {
                 Some(prod_id) => prod_id == product_id,
                 None => PRODUCT_IDS.contains(&product_id),

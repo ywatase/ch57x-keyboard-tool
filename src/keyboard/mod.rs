@@ -1,4 +1,5 @@
 pub(crate) mod k884x;
+pub(crate) mod k8850;
 pub(crate) mod k8890;
 
 use crate::parse;
@@ -70,7 +71,7 @@ impl Key {
         match self {
             Key::Button(n) if n >= base => Err(anyhow!("invalid key index")),
             Key::Button(n) => Ok(n + 1),
-            Key::Knob(n, _) if n >= 3 => Err(anyhow!("invalid knob index")),
+            Key::Knob(n, _) if n >= 4 => Err(anyhow!("invalid knob index")),
             Key::Knob(n, action) => Ok(base + 1 + 3 * n + (action as u8)),
         }
     }
